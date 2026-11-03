@@ -1,0 +1,30 @@
+name: customs
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+concurrency:
+  group: customs
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run customs
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: python customs.py
+      - name: Save state
+        run: |
+          git config user.name "customs-bot"
+          git config user.email "customs-bot@users.noreply.github.com"
+          git add state.json
+          git diff --cached --quiet || (git commit -m "state" && git pull --rebase && git push)
